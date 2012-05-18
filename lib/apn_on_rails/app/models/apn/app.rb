@@ -45,6 +45,7 @@ class APN::App < APN::Base
         conditions = ["app_id = ?", app_id]
       end
       begin
+        puts "cert is ------- #{the_cert}"
         APN::Connection.open_for_delivery({:cert => the_cert}) do |conn, sock|
           APN::Device.find_each(:conditions => conditions) do |dev|
             dev.unsent_notifications.each do |noty|

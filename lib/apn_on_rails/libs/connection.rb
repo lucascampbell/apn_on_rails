@@ -47,11 +47,11 @@ module APN
                    :passphrase => configatron.apn.passphrase,
                    :host => configatron.apn.host,
                    :port => configatron.apn.port}.merge(options)
-        #cert = File.read(options[:cert])
-        cert = options[:cert]
+        cert = File.read(options[:cert])
+        #cert = options[:cert]
         ctx = OpenSSL::SSL::SSLContext.new
-        ctx.key = OpenSSL::PKey::RSA.new(File.read(cert), options[:passphrase])
-        ctx.cert = OpenSSL::X509::Certificate.new(File.read(cert))
+        ctx.key = OpenSSL::PKey::RSA.new(cert, options[:passphrase])
+        ctx.cert = OpenSSL::X509::Certificate.new(cert)
   
         sock = TCPSocket.new(options[:host], options[:port])
         ssl = OpenSSL::SSL::SSLSocket.new(sock, ctx)

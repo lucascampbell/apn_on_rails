@@ -6,7 +6,9 @@ class APN::App < APN::Base
   has_many :unsent_notifications, :through => :devices
   has_many :group_notifications, :through => :groups
   has_many :unsent_group_notifications, :through => :groups
-
+  has_many :unsent_apple_group_notifications, :through => :groups, :class_name => 'APN::Group', :conditions => {:name => "APPLE"}
+  has_many :unsent_android_group_notifications, :through => :groups, :class_name => 'APN::Group', :conditions => {:name => "ANDROID"}
+  
   def cert
     (ENV['RAILS_ENV'] == 'production' ? apn_prod_cert : apn_dev_cert)
   end
@@ -60,14 +62,31 @@ class APN::App < APN::Base
     # end
   end
   
-  def send_daily_group_notification
+  def send_daily_apple_group_notification
     if self.cert.nil?
       raise APN::Errors::MissingCertificateError.new
       return
     end
-    unless self.unsent_group_notifications.nil? || self.unsent_group_notifications.empty?
+    unless self.unsent_apple_group_notifications.nil? || self.unsent_apple_group_notifications.empty?
       APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
-        gnoty = unsent_group_notifications.first
+        gnoty = unsent_apple_group_notifications.first
+        gnoty.devices.find_each do |device|
+          conn.write(gnoty.message_for_sending(device))
+        end
+        gnoty.sent_at = Time.now
+        gnoty.save
+      end
+    end
+  end
+  
+  def send_daily_android_group_notification
+    if self.cert.nil?
+      raise APN::Errors::MissingCertificateError.new
+      return
+    end
+    unless self.unsent_android_group_notifications.nil? || self.unsent_android_group_notifications.empty?
+      APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
+        gnoty = unsent_android_group_notifications.first
         gnoty.devices.find_each do |device|
           conn.write(gnoty.message_for_sending(device))
         end

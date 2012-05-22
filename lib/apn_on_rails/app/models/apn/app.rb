@@ -59,6 +59,23 @@ class APN::App < APN::Base
       end
     # end
   end
+  
+  def send_daily_group_notification
+    if self.cert.nil?
+      raise APN::Errors::MissingCertificateError.new
+      return
+    end
+    unless self.unsent_group_notifications.nil? || self.unsent_group_notifications.empty?
+      APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
+        gnoty = unsent_group_notifications.first
+        gnoty.devices.find_each do |device|
+          conn.write(gnoty.message_for_sending(device))
+        end
+        gnoty.sent_at = Time.now
+        gnoty.save
+      end
+    end
+  end
 
   def send_group_notifications
     if self.cert.nil?

@@ -47,6 +47,7 @@ module APN
                    :passphrase => configatron.apn.passphrase,
                    :host => configatron.apn.host,
                    :port => configatron.apn.port}.merge(options)
+        puts "file location is -- #{options[:cert]}"
         cert = File.read(options[:cert])
         #cert = options[:cert]
         ctx = OpenSSL::SSL::SSLContext.new

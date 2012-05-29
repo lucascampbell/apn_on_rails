@@ -79,24 +79,6 @@ class APN::App < APN::Base
       end
     end
   end
-  
-  def send_daily_android_group_notification
-    if self.cert.nil?
-      raise APN::Errors::MissingCertificateError.new
-      return
-    end
-    group = APN::Group.find_by_name("ANDROID")
-    unless self.unsent_group_notifications.blank?
-      APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
-        gnoty = unsent_group_notifications.first
-        gnoty.devices.find_each do |device|
-          conn.write(gnoty.message_for_sending(device))
-        end
-        gnoty.sent_at = Time.now
-        gnoty.save
-      end
-    end
-  end
 
   def send_group_notifications
     if self.cert.nil?
@@ -171,7 +153,6 @@ class APN::App < APN::Base
   end
 
   def self.process_devices_for_cert(the_cert)
-    puts "in APN::App.process_devices_for_cert"
     APN::Feedback.devices(the_cert).each do |device|
       if device.last_registered_at < device.feedback_at
         puts "device #{device.id} -> #{device.last_registered_at} < #{device.feedback_at}"

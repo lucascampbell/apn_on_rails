@@ -73,6 +73,7 @@ class APN::App < APN::Base
         APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
           gnoty = unsent_group_notifications.first
           gnoty.devices.find_each do |device|
+            puts "pushing to device #{device.id}"
             conn.write(gnoty.message_for_sending(device))
           end
           gnoty.sent_at = Time.now

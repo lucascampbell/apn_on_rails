@@ -67,16 +67,20 @@ class APN::App < APN::Base
       raise APN::Errors::MissingCertificateError.new
       return
     end
-    group = APN::Group.find_by_name("APPLE")
-    unless group.unsent_group_notifications.blank?
-      APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
-        gnoty = unsent_group_notifications.first
-        gnoty.devices.find_each do |device|
-          conn.write(gnoty.message_for_sending(device))
+    begin
+      group = APN::Group.find_by_name("APPLE")
+      unless group.unsent_group_notifications.blank?
+        APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
+          gnoty = unsent_group_notifications.first
+          gnoty.devices.find_each do |device|
+            conn.write(gnoty.message_for_sending(device))
+          end
+          gnoty.sent_at = Time.now
+          gnoty.save
         end
-        gnoty.sent_at = Time.now
-        gnoty.save
       end
+    rescue Exception => e
+      puts "error --- #{e.message}"
     end
   end
 

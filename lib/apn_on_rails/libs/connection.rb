@@ -20,7 +20,11 @@ module APN
       #   configatron.apn.cert = File.join(rails_root, 'config', 'apple_push_notification_development.pem')) # Development
       #   configatron.apn.cert = File.join(rails_root, 'config', 'apple_push_notification_production.pem')) # Production
       def open_for_delivery(options = {}, &block)
-        open(options, &block)
+        begin
+          open(options, &block)
+        rescue Exception => e
+          puts "error #{e.message}"
+        end
       end
       
       # Yields up an SSL socket to receive feedback from.

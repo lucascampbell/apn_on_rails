@@ -62,18 +62,20 @@ class APN::App < APN::Base
     # end
   end
   
-  def send_daily_apple_group_notification
+  def send_daily_apple_group_notification(limit)
     if self.cert.nil?
       raise APN::Errors::MissingCertificateError.new
       return
     end
+    start = limit - 90
     begin
       group = APN::Group.find_by_name("APPLE")
       unless group.unsent_group_notifications.blank?
         APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
           gnoty = unsent_group_notifications.first
-          gnoty.devices.find_each do |device|
+          gnoty.devices[start..limit-1].each do |device|
             puts "pushing to device #{device.id}"
+            #return if index.to_i >= limit.to_i
             conn.write(gnoty.message_for_sending(device))
           end
           gnoty.sent_at = Time.now

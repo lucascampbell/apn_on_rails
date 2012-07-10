@@ -69,6 +69,7 @@ module APN
           ssl.close
           sock.close
         rescue Exception => e
+          puts "before ssl read #{e.message}"
           response = ssl.read(6)
           puts "error with ssl #{response}"
           raise Exception.new(e.message)

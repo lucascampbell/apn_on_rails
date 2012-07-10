@@ -71,13 +71,20 @@ class APN::App < APN::Base
       group = APN::Group.find_by_name("APPLE")
       unless group.unsent_group_notifications.blank?
         APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
-          gnoty = unsent_group_notifications.first
-          gnoty.devices.each do |device|
-            puts "pushing to device #{device.id}"
-            conn.write(gnoty.message_for_sending(device))
+          begin
+            gnoty = unsent_group_notifications.first
+            gnoty.devices.each do |device|
+              puts "pushing to device #{device.id}"
+              conn.write(gnoty.message_for_sending(device))
+            end
+            gnoty.sent_at = Time.now
+            gnoty.save
+          rescue Exception => e
+              puts "before ssl read #{e.message}"
+              response = conn.read(6)
+              puts "error with ssl #{response}"
+              raise Exception.new(e.message)
           end
-          gnoty.sent_at = Time.now
-          gnoty.save
         end
       end
     rescue Exception => e

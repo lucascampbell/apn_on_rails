@@ -47,33 +47,26 @@ module APN
       
       private
       def open(options = {}, &block) # :nodoc:
-        begin
-          options = {:cert => configatron.apn.cert,
-                     :passphrase => configatron.apn.passphrase,
-                     :host => configatron.apn.host,
-                     :port => configatron.apn.port}.merge(options)
-          puts "file location is -- #{options[:cert]}"
-          cert = File.read(options[:cert])
-          #cert = options[:cert]
-          ctx = OpenSSL::SSL::SSLContext.new
-          ctx.key = OpenSSL::PKey::RSA.new(cert, options[:passphrase])
-          ctx.cert = OpenSSL::X509::Certificate.new(cert)
-  
-          sock = TCPSocket.new(options[:host], options[:port])
-          ssl = OpenSSL::SSL::SSLSocket.new(sock, ctx)
-          ssl.sync = true
-          ssl.connect
-  
-          yield ssl, sock if block_given?
-  
-          ssl.close
-          sock.close
-        rescue Exception => e
-          puts "before ssl read #{e.message}"
-          response = ssl.read(6)
-          puts "error with ssl #{response}"
-          raise Exception.new(e.message)
-        end
+        options = {:cert => configatron.apn.cert,
+                   :passphrase => configatron.apn.passphrase,
+                   :host => configatron.apn.host,
+                   :port => configatron.apn.port}.merge(options)
+        puts "file location is -- #{options[:cert]}"
+        cert = File.read(options[:cert])
+        #cert = options[:cert]
+        ctx = OpenSSL::SSL::SSLContext.new
+        ctx.key = OpenSSL::PKey::RSA.new(cert, options[:passphrase])
+        ctx.cert = OpenSSL::X509::Certificate.new(cert)
+
+        sock = TCPSocket.new(options[:host], options[:port])
+        ssl = OpenSSL::SSL::SSLSocket.new(sock, ctx)
+        ssl.sync = true
+        ssl.connect
+
+        yield ssl, sock if block_given?
+
+        ssl.close
+        sock.close
       end
       
     end

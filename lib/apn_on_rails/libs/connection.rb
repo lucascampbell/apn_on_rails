@@ -20,11 +20,11 @@ module APN
       #   configatron.apn.cert = File.join(rails_root, 'config', 'apple_push_notification_development.pem')) # Development
       #   configatron.apn.cert = File.join(rails_root, 'config', 'apple_push_notification_production.pem')) # Production
       def open_for_delivery(options = {}, &block)
-        begin
+        #begin
           open(options, &block)
-        rescue Exception => e
-          puts "error in conn #{e.message} \n #{e.backtrace}"
-        end
+        #rescue Exception => e
+        #  puts "error in conn #{e.message} \n #{e.backtrace}"
+        #end
       end
       
       # Yields up an SSL socket to receive feedback from.
@@ -47,26 +47,32 @@ module APN
       
       private
       def open(options = {}, &block) # :nodoc:
-        options = {:cert => configatron.apn.cert,
-                   :passphrase => configatron.apn.passphrase,
-                   :host => configatron.apn.host,
-                   :port => configatron.apn.port}.merge(options)
-        puts "file location is -- #{options[:cert]}"
-        cert = File.read(options[:cert])
-        #cert = options[:cert]
-        ctx = OpenSSL::SSL::SSLContext.new
-        ctx.key = OpenSSL::PKey::RSA.new(cert, options[:passphrase])
-        ctx.cert = OpenSSL::X509::Certificate.new(cert)
+        begin
+          options = {:cert => configatron.apn.cert,
+                     :passphrase => configatron.apn.passphrase,
+                     :host => configatron.apn.host,
+                     :port => configatron.apn.port}.merge(options)
+          puts "file location is -- #{options[:cert]}"
+          cert = File.read(options[:cert])
+          #cert = options[:cert]
+          ctx = OpenSSL::SSL::SSLContext.new
+          ctx.key = OpenSSL::PKey::RSA.new(cert, options[:passphrase])
+          ctx.cert = OpenSSL::X509::Certificate.new(cert)
   
-        sock = TCPSocket.new(options[:host], options[:port])
-        ssl = OpenSSL::SSL::SSLSocket.new(sock, ctx)
-        ssl.sync = true
-        ssl.connect
+          sock = TCPSocket.new(options[:host], options[:port])
+          ssl = OpenSSL::SSL::SSLSocket.new(sock, ctx)
+          ssl.sync = true
+          ssl.connect
   
-        yield ssl, sock if block_given?
+          yield ssl, sock if block_given?
   
-        ssl.close
-        sock.close
+          ssl.close
+          sock.close
+        rescue Exception => e
+          response = ssl.read(6)
+          puts "error with ssl #{response}"
+          raise Exception.new(e.message)
+        end
       end
       
     end

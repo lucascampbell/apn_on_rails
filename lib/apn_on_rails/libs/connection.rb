@@ -23,7 +23,7 @@ module APN
         begin
           open(options, &block)
         rescue Exception => e
-          puts "error in conn #{e.message}"
+          puts "error in conn #{e.message} \n #{e.backtrace}"
         end
       end
       

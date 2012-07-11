@@ -66,7 +66,7 @@ class APN::App < APN::Base
   #    send_daily_apple_group_notification_limit(start)
   #  end
   
-  def send_daily_apple_group_notification(loops)
+  def send_daily_apple_group_notification(loops,batch_size=90)
     if self.cert.nil?
       raise APN::Errors::MissingCertificateError.new
       return
@@ -83,9 +83,9 @@ class APN::App < APN::Base
         
         #outer loop to run in batches of 90
         while x < (loops + 1) 
-          start = (x*90) - 90
+          start = (x*batch_size) - batch_size
           puts "start is #{start}"
-          finish = d_size < (x * 90) ? d_size : (x * 90)
+          finish = d_size < (x * batch_size) ? d_size : (x * batch_size)
           puts "finish is #{finish}"
           APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock| 
             devices[start..finish].each do |device|
@@ -95,11 +95,12 @@ class APN::App < APN::Base
                  conn.write(gnoty.message_for_sending(device))
                rescue Exception => e
                  puts "destroying id #{d}"
-                 d = APN::Device.find_by_id(d)
-                 d.destroy
+                 dev = APN::Device.find_by_id(d)
+                 dev.destroy if dev
                end
              end
           end
+          x += 1
         end
         gnoty.sent_at = Time.now
         gnoty.save

@@ -62,30 +62,33 @@ class APN::App < APN::Base
     # end
   end
   
-  def reprocess_apps
-    send_daily_apple_group_notification
+  def reprocess_apps(start)
+    send_daily_apple_group_notification_limit(start)
   end
   
-  def send_daily_apple_group_notification
+  def send_daily_apple_group_notification(start=0)
     if self.cert.nil?
       raise APN::Errors::MissingCertificateError.new
       return
     end
+    
     begin
       group = APN::Group.find_by_name("APPLE")
       d = nil
+      i = nil
       unless group.unsent_group_notifications.blank?
+        gnoty = unsent_group_notifications.first
+        devices = gnoty.devices.sort
+        d_size = devices.size
+        finish = d_size < (start.to_i + 90) ? d_size : (start + 90)
         APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
           begin
-            gnoty = unsent_group_notifications.first
-            devices = gnoty.devices.sort
-            deviceme = APN::Device.find_by_id(405)
-            devices[0] = deviceme
             puts "first device is #{devices.first.id}"
             puts "last device is #{devices.last.id}"
-            devices[0..50].each do |device|
+            devices[start.to_i..finish].each_with_index do |device,index|
               puts "pushing to device #{device.id}"
               d = device.id
+              i = index
               conn.write(gnoty.message_for_sending(device))
             end
             gnoty.sent_at = Time.now
@@ -95,9 +98,10 @@ class APN::App < APN::Base
               puts "device error on id #{d}"
               d = APN::Device.find_by_id(d)
               d.destroy
-              reprocess_apps
+              reprocess_apps(i+1)
           end
         end
+       
       end
     rescue Exception => e
       puts "error --- #{e.message}"
@@ -125,7 +129,11 @@ class APN::App < APN::Base
         end
       end
     rescue Exception => e
-      puts "error --- #{e.message}"
+      puts "before ssl read #{e.message}"
+       puts "device error on id #{d}"
+       d = APN::Device.find_by_id(d)
+       d.destroy
+       reprocess_apps
     end
   end
 

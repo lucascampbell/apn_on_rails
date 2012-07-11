@@ -77,10 +77,12 @@ class APN::App < APN::Base
       d = nil
       i = nil
       unless group.unsent_group_notifications.blank?
+        puts "start is #{start}"
         gnoty = unsent_group_notifications.first
         devices = gnoty.devices.sort
         d_size = devices.size
         finish = d_size < (start.to_i + 90) ? d_size : (start + 90)
+        puts "finish is #{finish}"
         APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
           begin
             puts "first device is #{devices.first.id}"
@@ -96,9 +98,10 @@ class APN::App < APN::Base
           rescue Exception => e
               puts "before ssl read #{e.message}"
               puts "device error on id #{d}"
+              puts "index is #{i}"
               d = APN::Device.find_by_id(d)
               d.destroy
-              reprocess_apps(i+1)
+              reprocess_apps(i.to_i+1)
           end
         end
        

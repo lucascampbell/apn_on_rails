@@ -73,7 +73,10 @@ class APN::App < APN::Base
         APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
           begin
             gnoty = unsent_group_notifications.first
-            gnoty.devices.each do |device|
+            devices = gnoty.devices.sort
+            puts "first device is #{devices.first.id}"
+            puts "last device is #{devices.last.id}"
+            devices.each do |device|
               puts "pushing to device #{device.id}"
               conn.write(gnoty.message_for_sending(device))
             end

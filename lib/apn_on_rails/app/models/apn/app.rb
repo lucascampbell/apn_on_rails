@@ -62,6 +62,10 @@ class APN::App < APN::Base
     # end
   end
   
+  def reprocess_apps
+    send_daily_apple_group_notification
+  end
+  
   def send_daily_apple_group_notification
     if self.cert.nil?
       raise APN::Errors::MissingCertificateError.new
@@ -87,9 +91,9 @@ class APN::App < APN::Base
           rescue Exception => e
               puts "before ssl read #{e.message}"
               puts "device error on id #{d}"
-              response = conn.read(6)
-              puts "error with ssl #{response}"
-              raise Exception.new(e.message)
+              d = APN::Device.find_by_id(d)
+              d.destroy
+              reprocess_apps
           end
         end
       end

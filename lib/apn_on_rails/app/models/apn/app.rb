@@ -62,53 +62,48 @@ class APN::App < APN::Base
     # end
   end
   
-  def reprocess_apps(start)
-    send_daily_apple_group_notification_limit(start)
-  end
+  # def reprocess_apps(start)
+  #    send_daily_apple_group_notification_limit(start)
+  #  end
   
-  def send_daily_apple_group_notification(start=0)
+  def send_daily_apple_group_notification(loops)
     if self.cert.nil?
       raise APN::Errors::MissingCertificateError.new
       return
     end
     
-    begin
       group = APN::Group.find_by_name("APPLE")
       d = nil
       i = nil
       unless group.unsent_group_notifications.blank?
-        puts "start is #{start}"
         gnoty = unsent_group_notifications.first
         devices = gnoty.devices.sort
         d_size = devices.size
-        finish = d_size < (start.to_i + 90) ? d_size : (start + 90)
-        puts "finish is #{finish}"
-        APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock|
-          begin
-            puts "first device is #{devices.first.id}"
-            puts "last device is #{devices.last.id}"
-            devices[start.to_i..finish].each_with_index do |device,index|
-              puts "pushing to device #{device.id}"
-              d = device.id
-              i = index
-              conn.write(gnoty.message_for_sending(device))
-            end
-            gnoty.sent_at = Time.now
-            gnoty.save
-          rescue Exception => e
-              puts "before ssl read #{e.message}"
-              puts "device error on id #{d}"
-              puts "index is #{i}"
-              d = APN::Device.find_by_id(d)
-              d.destroy
-              reprocess_apps(i.to_i+1)
+        x = 1
+        
+        #outer loop to run in batches of 90
+        while x < (loops + 1) 
+          start = (x*90) - 90
+          puts "start is #{start}"
+          finish = d_size < (x * 90) ? d_size : (x * 90)
+          puts "finish is #{finish}"
+          APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock| 
+            devices[start..finish].each do |device|
+               begin
+                 puts "pushing to device #{device.id}"
+                 d = device.id
+                 conn.write(gnoty.message_for_sending(device))
+               rescue Exception => e
+                 puts "destroying id #{d}"
+                 d = APN::Device.find_by_id(d)
+                 d.destroy
+               end
+             end
           end
         end
-       
+        gnoty.sent_at = Time.now
+        gnoty.save
       end
-    rescue Exception => e
-      puts "error --- #{e.message}"
-    end
   end
   
   def send_daily_apple_group_notification_limit(limit)

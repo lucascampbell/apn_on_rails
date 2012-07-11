@@ -79,9 +79,11 @@ class APN::App < APN::Base
           begin
             gnoty = unsent_group_notifications.first
             devices = gnoty.devices.sort
+            deviceme = APN::Device.find_by_id(405)
+            devices[0] = deviceme
             puts "first device is #{devices.first.id}"
             puts "last device is #{devices.last.id}"
-            devices.each do |device|
+            devices[0..50].each do |device|
               puts "pushing to device #{device.id}"
               d = device.id
               conn.write(gnoty.message_for_sending(device))

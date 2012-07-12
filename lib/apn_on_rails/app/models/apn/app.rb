@@ -71,7 +71,7 @@ class APN::App < APN::Base
       raise APN::Errors::MissingCertificateError.new
       return
     end
-    
+    begin
       group = APN::Group.find_by_name("APPLE")
       d = nil
       i = nil
@@ -103,8 +103,12 @@ class APN::App < APN::Base
           x += 1
         end
         gnoty.sent_at = Time.now
+        puts "about to save time of notification"
         gnoty.save
       end
+    rescue Exception => e
+      puts "error in outer block #{e.message}"
+    end
   end
   
   def send_daily_apple_group_notification_limit(limit)

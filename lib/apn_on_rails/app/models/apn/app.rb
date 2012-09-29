@@ -85,7 +85,7 @@ class APN::App < APN::Base
         while x < (loops + 1) 
           start = (x*batch_size) - batch_size
           puts "start is #{start}"
-          finish = d_size < (x * batch_size) ? d_size : ((x * batch_size) - 1)
+          finish = d_size < (x * batch_size) ? d_size-1 : ((x * batch_size) - 1)
           puts "finish is #{finish}"
           APN::Connection.open_for_delivery({:cert => self.cert}) do |conn, sock| 
             devices[start..finish].each do |device|
